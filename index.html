@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PureClone</title>
+
+    <link rel="stylesheet" type="text/css" href="bootstrap.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
+	<script
+	  src="https://code.jquery.com/jquery-3.2.1.min.js"
+	  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+	  crossorigin="anonymous"></script>
+  <style>
+	.container .panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+}
+  </style>
+  </head>
+  <body>  
+	<div class="container body-content">
+		<div class="panel panel-default col-md-4">
+			<div class="panel-title text-center"><h1><img src="./logo.jpg" width="10%" height="10%"/> PureClone Log-In</h1></div>
+			<div class="panel-body text-center">
+				<button type = "button" class="btn btn-info btn-sm" data-bind="click: implicitLogin">Login through PureCloud</button>
+			</div>
+		</div>
+	</div>
+  </body>
+</html>
+
+
+
+<script type="text/javascript">
+	function ViewModel(){
+		var queryStringData = {
+			response_type : "token",
+			client_id : "fe205754-017a-4f87-af6e-6d4678c01d1d",
+			redirect_uri : "http://localhost:8085/main.html"
+		}
+	
+	
+		this.implicitLogin = function() {
+			window.location.replace("https://login.mypurecloud.com/oauth/authorize?" + jQuery.param(queryStringData));
+		}
+		
+		//document.querySelector("button").addEventListener("click",implicitLogin);		
+		
+	}	
+	ko.applyBindings(new ViewModel());
+</script>

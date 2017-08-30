@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>PureClone</title>
+
+	<link rel="stylesheet" type="text/css" href="bootstrap.css">
+	
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	
+	<script src="https://cdn.jsdelivr.net/jquery.loadingoverlay/latest/loadingoverlay.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/jquery.loadingoverlay/latest/loadingoverlay_progress.min.js"></script>
+	
+	<script src="https://sdk-cdn.mypurecloud.com/javascript/0.51.1/purecloud-api.min.js"></script>
+	<!-- Code by Prince Merluza. blablabla. 2017 -->
+</head>
+<body>  
+<div class="container-fluid">
+	<div class="row">
+		<!-- Headr Name and pressence -->
+		<div class="col-md-12">
+		<div class="page-header">
+			<h3>Hi <span data-bind="text: currentUser.name"></span></h3>
+			<!-- presence dropdown -->
+			<div class="dropdown">
+				<button class="btn btn-success btn-xs dropdown-toggle" type="button" data-toggle="dropdown" 
+				data-bind="text: currentUser.nameOfPresence()">Dropdown Presence
+				<span class="caret"></span></button>
+				<ul class="dropdown-menu" data-bind="foreach: arrStatus">
+					<li>
+						<a href="#" data-bind="text: name, click: $root.changePresence"></a>
+					</li>
+					<ul data-bind="visible: isAParent, foreach: children">
+						<li>
+							<a href="#" style="color: #888;" data-bind="text: name, click: $root.changePresence"></a>
+						</li>
+					</ul>
+				</ul>
+			</div>
+		</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-3">
+			<!-- Input panel when no current call -->
+			<div class="panel panel-default" data-bind="visible: isACallActive() == false">
+				<div class="panel-body">
+					<input type="text" data-bind="value: numberToDial"></input>
+					<button class="btn btn-sm btn-primary" data-bind="click: callNumber,  disable: numberToDial().length <= 0">Call</button>
+					<button class="btn btn-sm btn-warning" data-bind="click: function(){model.numberToDial('');}">Clear</button>
+				</div>
+			</div>
+			
+			<!-- Panel of Current Call COntrols -->
+			<div class="panel panel-default" data-bind="visible: isACallActive">
+				<div class="panel-heading">Ongoing Conversation</div>
+				<div class="panel-body">
+					<div class="btn-group" style="margin-bottom: 25px;">
+						<button class="btn btn-primary" data-bind="click: muteCall, css: {active: currentMuteState()}">Mute</button>
+						<button class="btn btn-primary" data-bind="click: holdCall, css: {active: currentHoldState()}">Hold</button>
+						<button class="btn btn-primary" data-bind="click: disconnectCall">Disconnect</button>
+					</div>
+					<div>
+						<p>Transfer the call:</p>
+						<input type="text" data-bind="value: numberToTransferTo"></input>
+						<div class="btn-group">
+							<button class="btn btn-primary" data-bind="click: blindTransfer">Blind </button>
+							<button class="btn btn-primary" data-bind="click: consultTransfer">Consult </button>
+						</div>
+					</div>	
+				</div>
+			</div>
+				
+			<!-- Phone Buttons -->
+			<button type="button" class="btn btn-sm btn-default btn-block" data-toggle="collapse" data-target="#phoneButtons">
+			Show/Hide Phone Buttons</button>
+			<div id="phoneButtons" class="collapse in">
+				<div class="panel panel-default">	
+					<div class="panel-body">
+						<div class="text-center">
+							<div>
+								<button class="btn btn-lg btn-default" data-bind="click: dtmfDial.bind($data, '1')">1</button>
+								<button class="btn btn-lg btn-default" data-bind="click: dtmfDial.bind($data, '2')">2</button>
+								<button class="btn btn-lg btn-default" data-bind="click: dtmfDial.bind($data, '3')">3</button>
+							</div>
+							<div>
+								<button class="btn btn-lg btn-default" data-bind="click: dtmfDial.bind($data, '4')">4</button>
+								<button class="btn btn-lg btn-default" data-bind="click: dtmfDial.bind($data, '5')">5</button>
+								<button class="btn btn-lg btn-default" data-bind="click: dtmfDial.bind($data, '6')">6</button>
+							</div>
+							<div>
+								<button class="btn btn-lg btn-default" data-bind="click: dtmfDial.bind($data, '7')">7</button>
+								<button class="btn btn-lg btn-default" data-bind="click: dtmfDial.bind($data, '8')">8</button>
+								<button class="btn btn-lg btn-default" data-bind="click: dtmfDial.bind($data, '9')">9</button>
+							</div>
+							<div>
+								<button class="btn btn-lg btn-default" data-bind="click: dtmfDial.bind($data, '*')">*</button>
+								<button class="btn btn-lg btn-default" data-bind="click: dtmfDial.bind($data, '0')">0</button>
+								<button class="btn btn-lg btn-default" data-bind="click: dtmfDial.bind($data, '#')">#</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+		</div>
+		<!-- Right pane -->
+		<div class="col-md-9">
+			<!-- Current Conversation -->
+			<div class="panel panel-info" data-bind="visible: isACallActive">
+				<div class="panel-heading">Current Conversation Details</div>
+				<table class="table table-hover">
+					<tbody>
+						<tr>
+							<td><strong>Duration</strong></td>
+							<td data-bind="text: durationTimerValue"></td>
+						</tr>
+						<tr>
+							<td><strong>Queue ID</strong></td>
+							<td data-bind="text: currentConvo.queueId">(Queue ID)</td>
+						</tr>
+						<tr>
+							<td><strong>Queue Name</strong></td>
+							<td data-bind="text: currentConvo.queueName">(Queue Name)</td>
+						</tr>
+					</tbody>
+				</table>
+				<table class="table table-hover">
+					<thead>
+						<tr>
+							<th>Purpose</th>
+							<th>Name</th>
+							<th>Participant ID</th>
+							<th>ANI</th>
+						</tr>
+					</thead>
+					<tbody data-bind="foreach: currentConvo.participants">
+						<tr>
+							<td data-bind="text: purpose"></td>
+							<td data-bind="text: name"></td>
+							<td data-bind="text: id"></td>
+							<td data-bind="text: ani"></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<!-- Call History -->
+			<button type="button" class="btn btn-md btn-default btn-block" data-toggle="collapse" data-target="#callHistory">
+			Show/Hide Call History</button>
+			<div id="callHistory" class="collapse">
+				<div data-bind="foreach: arrConvos">
+					<div class="panel panel-primary">
+						<div class="panel-heading">Call History <span data-bind="text: $index()"></span></div>
+						<table class="table table-hover">
+							<tbody>
+								<tr>
+									<th scope="row">Duration</th>
+									<td data-bind="text: getDuration()">(Duration)</td>
+								</tr>	
+								<tr data-bind="visible: ani() != ''">
+									<th scope="row">DNIS</th>
+									<td data-bind="text: ani">(ANI)</td>
+								</tr>
+								<tr data-bind="visible: queueId() != ''">
+									<th scope="row">Queue ID</th>
+									<td data-bind="text: queueId"></td>
+								</tr>
+								<tr data-bind="visible: queueName() != ''">
+									<th scope="row">Queue Name</th>
+									<td data-bind="text: queueName"></td>
+								</tr>
+							</tbody>
+						</table> 
+						<table style="border-top: 6px #ddd solid;" class="table table-hover">
+							<thead>
+								<tr>
+									<th>Purpose</th>
+									<th>Name</th>
+									<th>Participant ID</th>
+									<th>ANI</th>
+								</tr>
+							</thead>
+							<tbody data-bind="foreach: participants">
+								<tr>
+									<td data-bind="text: purpose"></td>
+									<td data-bind="text: name"></td>
+									<td data-bind="text: id"></td>
+									<td data-bind="text: ani"></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+</body>
+</html>
+<script src='helper.js'></script>
+<script src='viewmodel.js'></script>
+<script src='main_functions.js'></script>
+<script type="text/javascript">
+$.LoadingOverlay("show"); //loading overlay
+
+//create purecloud session
+if(window.location.hash) {
+	
+	var token = getParameterByName('access_token');
+	var pureCloudSession = purecloud.platform.PureCloudSession({
+		strategy: 'token',
+		token: token
+	});
+
+	//save token to cookie
+	document.cookie = 	"token="+token;
+	
+	//hide token from URL
+	window.history.pushState("object or string", "Title", "/pure-panel" );
+}
+
+ko.applyBindings(new ViewModel());
+
+// -------------------- Globals -------------------------
+//for notificatoins
+var webSocket = null;
+
+try{
+	//purecloud api instances
+	var usersApi = new purecloud.platform.UsersApi(pureCloudSession);
+	var presenceApi = new purecloud.platform.PresenceApi(pureCloudSession);
+	var conversationsApi = new purecloud.platform.ConversationsApi(pureCloudSession);
+	var notificationsApi = new purecloud.platform.NotificationsApi(pureCloudSession);
+	var presenceApi = new purecloud.platform.PresenceApi(pureCloudSession);
+}catch(err){
+	alert("Something went wrong. Try logging in first.");
+	window.location.replace("http://localhost:8085/");
+}
+
+//topic strings for notifications
+var userPresenceTopic = "";
+var conversationsTopic ="";
+var timerHandler = null;
+var callHistoryToShow = 5;
+
+//DEBUG
+var timeoutRetryTime = 1000;
+
+buildAtStart();
+
+</script>
